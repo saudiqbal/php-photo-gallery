@@ -8,7 +8,7 @@ require BASE_PATH . '_lib_/translator_class.php';
 $translator = new translator($settings['lang']);
 if(session_status() == PHP_SESSION_NONE){
     session_start();
-    session_cache_limiter("private_no_expire");
+    //session_cache_limiter("private_no_expire");
 }
 // <<<<<<<<<<<<<<<<<<<<
 // Validate the _GET category input for security and error handling
@@ -30,7 +30,10 @@ if (isset($_GET['category'])) {
     $files = list_files($settings, $ignored_categories_and_files);
     if (count($files) >= 1) {
         $HTML_cup = '<ul id="images">';
-        foreach ($files as &$file_name) {
+$nb_elem_per_page = 10;
+$page = isset($_GET['page'])?intval($_GET['page']-1):0;
+$number_of_pages = intval(count($files)/$nb_elem_per_page)+2;
+        foreach ((array_slice($files, $page*$nb_elem_per_page, $nb_elem_per_page)) as &$file_name) {
             if (isset($_SESSION["password"])) {
                 $delete_control = '<a href="admin.php?delete='.$requested_category .'/'. $file_name.'" class="delete"><img src="delete.png" alt="delete" style="width:30px;height:30px;"></a>';
                 $category_preview_control = '<a href="admin.php?category='.$requested_category .'&set_preview_image='.$file_name.'" class="preview"><img src="preview.png" alt="set preview image" style="width:30px;height:30px;"></a>';
@@ -38,8 +41,15 @@ if (isset($_GET['category'])) {
             $thumb_file_location = 'thumbnails/' . $requested_category . '/thumb-' . rawurlencode($file_name);
             $source_file_location = $requested_category . '/' . $file_name;
             $HTML_cup .= '<li><a href="viewer.php?category='.$requested_category.'&filename='.$file_name.'"><img src="'.$thumb_file_location.'" alt="'.$file_name.'"></a>'.$delete_control.$category_preview_control.'</li>';
+
         }
         $HTML_cup .= '</ul>';
+		if(count($files) > $nb_elem_per_page)
+		{
+					for($i=1;$i<$number_of_pages;$i++){
+						$HTML_cup .= "<li><a href='index.php?category=$requested_category&page=$i'>$i</a></li>";
+			}
+		}
     } else {
         $HTML_cup = '<p>'.$translator->string('There are no files in:').' <b>' . space_or_dash('-', $requested_category) . '</b></p>';
     }
