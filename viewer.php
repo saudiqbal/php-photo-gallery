@@ -28,11 +28,6 @@ if (
                 $next_i = $i+1;$previous_i = $i-1;
                 if (isset($files["$previous_i"])) {$previous_file = $files["$previous_i"];}
                 if (isset($files["$next_i"])) {$next_file = $files["$next_i"];}
-              } else {
-                $file_name = $files["$i"];
-                $thumb_file_location = 'thumbnails/' . $requested_category . '/thumb-' . $file_name;
-                $source_file_location = $requested_category . '/' . $file_name;
-                $category_items .= '<li><div><a href="viewer.php?category='.$requested_category.'&filename='.$file_name.'"><img src="'.$thumb_file_location.'" alt="'.$file_name.'"></a></div></li>';
               }
               ++$i;
             }
