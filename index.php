@@ -24,7 +24,7 @@ if (isset($_GET['category'])) {
       echo '<!doctype html><html><head></head><body><h1>'.$translator->string('Error').'</h1><p>'.$translator->string('This is not a file or category...').'</p></body></html>';
       exit();
     }
-    // <<<<<<<<<<<<<<<<<<<<
+    // <<<<<<<<<<<<<<<<<<<< 
     // Fetch the files in the category, and include them in an HTML ul list
     // >>>>>>>>>>>>>>>>>>>>
     $files = list_files($settings, $ignored_categories_and_files);
