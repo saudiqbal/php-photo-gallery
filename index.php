@@ -24,15 +24,20 @@ if (isset($_GET['category'])) {
       echo '<!doctype html><html><head></head><body><h1>'.$translator->string('Error').'</h1><p>'.$translator->string('This is not a file or category...').'</p></body></html>';
       exit();
     }
-    // <<<<<<<<<<<<<<<<<<<< 
+    // <<<<<<<<<<<<<<<<<<<<
     // Fetch the files in the category, and include them in an HTML ul list
     // >>>>>>>>>>>>>>>>>>>>
     $files = list_files($settings, $ignored_categories_and_files);
-    if (count($files) >= 1) {
+	$totalfiles = count($files);
+    if ($totalfiles >= 1) {
         $HTML_cup = '<ul id="images">';
 $nb_elem_per_page = 10;
+$adjacents = 3;
 $page = isset($_GET['page'])?intval($_GET['page']-1):0;
-$number_of_pages = intval(count($files)/$nb_elem_per_page)+2;
+$pgpage = isset($_GET['page'])?$_GET['page']:1;
+
+$number_of_pages = intval($totalfiles/$nb_elem_per_page)+2;
+
         foreach ((array_slice($files, $page*$nb_elem_per_page, $nb_elem_per_page)) as &$file_name) {
             if (isset($_SESSION["password"])) {
                 $delete_control = '<a href="admin.php?delete='.$requested_category .'/'. $file_name.'" class="delete"><img src="delete.png" alt="delete" style="width:30px;height:30px;"></a>';
@@ -44,12 +49,7 @@ $number_of_pages = intval(count($files)/$nb_elem_per_page)+2;
 
         }
         $HTML_cup .= '</ul>';
-		if(count($files) > $nb_elem_per_page)
-		{
-					for($i=1;$i<$number_of_pages;$i++){
-						$HTML_cup .= "<li><a href='index.php?category=$requested_category&page=$i'>$i</a></li>";
-			}
-		}
+		$pagination = pagination($totalfiles,$nb_elem_per_page,$pgpage,"index.php?category=".$requested_category ."&page=",$adjacents);
     } else {
         $HTML_cup = '<p>'.$translator->string('There are no files in:').' <b>' . space_or_dash('-', $requested_category) . '</b></p>';
     }
@@ -191,4 +191,136 @@ function createThumbnail($filename, $source_directory, $thumbs_directory, $max_w
             echo $translator->string('Unknown filetype. Supported filetypes are: JPG, PNG og GIF.');exit();
     }
 }
+/*
+	Plugin Name: *Digg Style Paginator
+	Plugin URI: http://www.mis-algoritmos.com/2006/11/23/paginacion-al-estilo-digg-y-sabrosus/
+	Description: Adds a <strong>digg style pagination</strong>.
+	Version: 0.1 Beta
+*/
+function pagination($total_pages,$limit,$page,$file,$adjacents){
+		if($page)
+				$start = ($page - 1) * $limit; 			//first item to display on this page
+			else
+				$start = 0;								//if no page var is given, set start to 0
+
+		/* Setup page vars for display. */
+		if ($page == 0) $page = 1;					//if no page var is given, default to 1.
+		$prev = $page - 1;							//anterior page is page - 1
+		$siguiente = $page + 1;							//siguiente page is page + 1
+		$lastpage = ceil($total_pages/$limit);		//lastpage is = total pages / items per page, rounded up.
+		$lpm1 = $lastpage - 1;					//last page minus 1
+		if($page > $lastpage)
+		{
+			echo "SQL Injection detected!";
+			exit();
+		}
+		$link_previous = "&#x276E; Previous";
+		$link_next = "Next &#x276F;";
+
+		$p = false;
+		if(strpos($file,"?")>0)
+			$p = true;
+
+		//ob_start();
+		if($lastpage > 1){
+				//anterior button
+				if($page > 1)
+								if($p)
+									echo "<span class=\"pagination-prev\"><a href=\"$file$prev\" class=\"pagination-button left\">$link_previous</a></span>";
+									else
+									echo "<span class=\"pagination-prev\"><a href=\"$file$prev\" class=\"pagination-button left\">$link_previous</a></span>";
+					else
+						echo "<span class=\"buttonDisabled leftDisabled\">$link_previous</span>";
+				//pages
+				if ($lastpage < 7 + ($adjacents * 2)){//not enough pages to bother breaking it up
+						for ($counter = 1; $counter <= $lastpage; $counter++){
+								if ($counter == $page)
+										echo "<span class=\"pagination-button middleCurrent\">$counter</span>";
+									else
+												if($p)
+												echo "<a href=\"$file$counter\" class=\"pagination-button middle\">$counter</a>";
+												else
+												echo "<a href=\"$file?page=$counter\" class=\"pagination-button middle\">$counter</a>";
+							}
+					}
+				elseif($lastpage > 5 + ($adjacents * 2)){//enough pages to hide some
+						//close to beginning; only hide later pages
+						if($page < 1 + ($adjacents * 2)){
+								for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter++){
+										if ($counter == $page)
+												echo "<span class=\"pagination-button middleCurrent\">$counter</span>";
+											else
+														if($p)
+														echo "<a href=\"$file$counter\" class=\"pagination-button middle\">$counter</a>";
+														else
+														echo "<a href=\"$file?page=$counter\" class=\"pagination-button middle\">$counter</a>";
+									}
+								echo "";
+										if($p){
+										echo "<a href=\"$file$lpm1\" class=\"pagination-button middle\">$lpm1</a>";
+										echo "<a href=\"$file$lastpage\" class=\"pagination-button middle\">$lastpage</a>";
+										}else{
+										echo "<a href=\"$file?page=$lpm1\" class=\"pagination-button middle\">$lpm1</a>";
+										echo "<a href=\"$file?page=$lastpage\" class=\"pagination-button middle\">$lastpage</a>";
+										}
+
+							}
+						//in middle; hide some front and some back
+						elseif($lastpage - ($adjacents * 2) > $page && $page > ($adjacents * 2)){
+										if($p){
+										echo "<a href=\"{$file}1\" class=\"pagination-button middle\">1</a>";
+										echo "<a href=\"{$file}2\" class=\"pagination-button middle\">2</a>";
+										}else{
+										echo "<a href=\"$file?page=1\" class=\"pagination-button middle\">1</a>";
+										echo "<a href=\"$file?page=2\" class=\"pagination-button middle\">2</a>";
+										}
+								echo "";
+								for ($counter = $page - $adjacents; $counter <= $page + $adjacents; $counter++)
+									if ($counter == $page)
+											echo "<span class=\"pagination-button middleCurrent\">$counter</span>";
+										else
+													if($p)
+													echo "<a href=\"$file$counter\" class=\"pagination-button middle\">$counter</a>";
+													else
+													echo "<a href=\"$file?page=$counter\" class=\"pagination-button middle\">$counter</a>";
+								echo "";
+										if($p){
+										echo "<a href=\"$file$lpm1\" class=\"pagination-button middle\">$lpm1</a>";
+										echo "<a href=\"$file$lastpage\" class=\"pagination-button middle\">$lastpage</a>";
+										}else{
+										echo "<a href=\"$file?page=$lpm1\" class=\"pagination-button middle\">$lpm1</a>";
+										echo "<a href=\"$file?page=$lastpage\" class=\"pagination-button middle\">$lastpage</a>";
+										}
+							}
+						//close to end; only hide early pages
+						else{
+										if($p){
+										echo "<a href=\"{$file}1\" class=\"pagination-button middle\">1</a>";
+										echo "<a href=\"{$file}2\" class=\"pagination-button middle\">2</a>";
+										}else{
+										echo "<a href=\"$file?page=1\" class=\"pagination-button middle\">1</a>";
+										echo "<a href=\"$file?page=2\" class=\"pagination-button middle\">2</a>";
+										}
+								echo "";
+								for ($counter = $lastpage - (2 + ($adjacents * 2)); $counter <= $lastpage; $counter++)
+									if ($counter == $page)
+											echo "<span class=\"pagination-button middleCurrent\">$counter</span>";
+										else
+													if($p)
+													echo "<a href=\"$file$counter\" class=\"pagination-button middle\">$counter</a>";
+													else
+													echo "<a href=\"$file?page=$counter\" class=\"pagination-button middle\">$counter</a>";
+							}
+					}
+				if ($page < $counter - 1)
+								if($p)
+								echo "<span class=\"pagination-next\"><a href=\"$file$siguiente\" class=\"pagination-button right\">$link_next</a></span>";
+								else
+								echo "<span class=\"pagination-next\"><a href=\"$file?page=$siguiente\" class=\"pagination-button rightDisabled\">$link_next</a></span>";
+					else
+						echo "<span class=\"buttonDisabled rightDisabled pagination-next\">$link_next</span>";
+			}
+	}
+// Pagination Ends
+
 require BASE_PATH . 'templates/'.$template.'/category_template.php';
